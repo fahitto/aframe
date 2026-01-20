@@ -1,64 +1,99 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<script src="http://localhost:9000/build/aframe.js"></script>
-</head>
-<body>
-<script>
-(function () {
-/* Generate attribute tables for primitive documentation. */
-var geometries = AFRAME.geometries;
-var geometryNames = Object.keys(geometries).sort();
-var meshMappings = AFRAME.primitives.getMeshMixin().mappings;
+import turtle
+import time
 
-geometryNames.forEach(function (geometryName) {
-  // Create mesh primitive header.
-  console.log('a-' + unCamelCase(geometryName));
+# --- Настройки окна ---
+screen = turtle.Screen()
+screen.setup(width=900, height=700)
+screen.bgcolor("black")
+screen.title("Minecraft Message for Bro")
+screen.tracer(0)
 
-  var str = [];
-  str.push('## Attributes\n');
-  str.push('| Attribute | Component Mapping | Default Value |');
-  str.push('| -------- | ----------------- | ------------- |');
+t = turtle.Turtle()
+t.hideturtle()
 
-  // Compile geometry mappings.
-  var geometry = geometries[geometryName];
-  var rows = {};
-  Object.keys(geometry.schema).forEach(function addMapping (property) {
-    rows[unCamelCase(property)] = '|' + [
-      unCamelCase(property),
-      'geometry.' + property,
-      geometry.schema[property].stringify(geometry.schema[property].default)
-    ].join('|') + '|';
-  });
+# --- Константы ---
+PIXEL_SIZE_HEART = 20
+PIXEL_SIZE_TEXT = 7
+# Карта сердца (1-красный, 2-черный контур, 3-блик)
+heart_map = [
+    [0,0,2,2,0,0,0,2,2,0,0],
+    [0,2,1,1,2,0,2,1,1,2,0],
+    [2,1,1,1,1,2,1,1,1,1,2],
+    [2,1,3,1,1,1,1,1,1,1,2],
+    [2,1,1,1,1,1,1,1,1,1,2],
+    [0,2,1,1,1,1,1,1,1,2,0],
+    [0,0,2,1,1,1,1,1,2,0,0],
+    [0,0,0,2,1,1,1,2,0,0,0],
+    [0,0,0,0,2,1,2,0,0,0,0],
+    [0,0,0,0,0,2,0,0,0,0,0]
+]
 
-  // Compile mesh mixin mappings.
-  Object.keys(meshMappings).forEach(function addMapping (attribute) {
-    var mapping = meshMappings[attribute];
-    var property = mapping.split('.')[1];
-    var materialProp = AFRAME.components.material.schema[property] ||
-                       AFRAME.shaders.standard.schema[property];
-    rows[attribute] = '|' + [
-      attribute,
-      mapping,
-      (materialProp.default === undefined || materialProp.default === null ||
-       materialProp.default === '') ?
-        'None' : materialProp.stringify(materialProp.default)
-    ].join('|') + '|';
-  });
-
-  // Append rows.
-  Object.keys(rows).sort().forEach(function (attribute) {
-    str.push(rows[attribute]);
-  });
-
-  console.log(str.join('\n'));
-});
-
-function unCamelCase (str) {
-  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+# Исправленные карты букв (5x5)
+font_map = {
+    'y': [[1,0,1], [1,0,1], [0,1,0], [0,1,0], [0,1,0]],
+    'o': [[1,1,1], [1,0,1], [1,0,1], [1,0,1], [1,1,1]],
+    'u': [[1,0,1], [1,0,1], [1,0,1], [1,0,1], [1,1,1]],
+    'a': [[1,1,1], [1,0,1], [1,1,1], [1,0,1], [1,0,1]],
+    'r': [[1,1,0], [1,0,1], [1,1,0], [1,0,1], [1,0,1]], # Правильная R
+    'e': [[1,1,1], [1,0,0], [1,1,1], [1,0,0], [1,1,1]],
+    'm': [[1,0,1], [1,1,1], [1,0,1], [1,0,1], [1,0,1]],
+    'b': [[1,0,0], [1,0,0], [1,1,1], [1,0,1], [1,1,1]],
+    's': [[1,1,1], [1,0,0], [1,1,1], [0,0,1], [1,1,1]],
+    't': [[1,1,1], [0,1,0], [0,1,0], [0,1,0], [0,1,0]],
+    'k': [[1,0,1], [1,1,0], [1,1,0], [1,0,1], [1,0,1]],
+    'i': [[1,1,1], [0,1,0], [0,1,0], [0,1,0], [1,1,1]],
+    'z': [[1,1,1], [0,0,1], [0,1,0], [1,0,0], [1,1,1]],
+    ' ': [[0,0,0]],
+    ',': [[0,0,0], [0,0,0], [0,0,0], [1,0,0], [1,0,0]]
 }
-})();
-</script>
-</body>
-</html>
+
+def draw_pixel(x, y, size, color):
+    t.up()
+    t.goto(x, y)
+    t.down()
+    t.color(color)
+    t.begin_fill()
+    for _ in range(4):
+        t.forward(size)
+        t.left(90)
+    t.end_fill()
+
+def animate_heart():
+    start_x = -(len(heart_map[0]) * PIXEL_SIZE_HEART) / 2
+    start_y = 250
+    for row_i, row in enumerate(heart_map):
+        for col_i, cell in enumerate(row):
+            if cell > 0:
+                color = "#FF0000" if cell == 1 else "#FFFFFF" if cell == 3 else "#1A1A1A"
+                x = start_x + col_i * PIXEL_SIZE_HEART
+                y = start_y - row_i * PIXEL_SIZE_HEART
+                draw_pixel(x, y, PIXEL_SIZE_HEART, color)
+                screen.update()
+                time.sleep(0.01)
+
+def animate_text(text, start_x, start_y, size, color):
+    curr_x = start_x
+    for char in text.lower():
+        if char in font_map:
+            glyph = font_map[char]
+            for r_i, row in enumerate(glyph):
+                for c_i, bit in enumerate(row):
+                    if bit:
+                        # Тень
+                        draw_pixel(curr_x + c_i*size + 2, start_y - r_i*size - 2, size, "#333333")
+                        # Основной цвет
+                        draw_pixel(curr_x + c_i*size, start_y - r_i*size, size, color)
+            curr_x += (len(glyph[0]) + 2) * size
+            screen.update()
+            time.sleep(0.05)
+
+# --- Запуск анимации ---
+animate_heart()
+
+# Рисуем текст по строкам, чтобы точно влезло
+animate_text("you are my best bro", -340, -50, PIXEL_SIZE_TEXT, "white")
+animate_text("kaizer", -160, -130, PIXEL_SIZE_TEXT + 4, "#FF0000") # Золотое имя покрупнее
+
+# Финальный блик (надпись готова)
+screen.update()
+turtle.done()
